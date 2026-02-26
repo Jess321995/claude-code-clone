@@ -45,7 +45,7 @@ def main():
 
     if not chat.choices or len(chat.choices) == 0:
         raise RuntimeError("no choices in response")
-    else:
+    elif chat.choices[0].message.tool_calls:
         tool_call = chat.choices[0].message.tool_calls[0]
         if tool_call.function.name == "Read":
             file_path = json.loads(tool_call.function.arguments)['file_path']
