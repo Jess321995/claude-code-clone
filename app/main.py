@@ -65,7 +65,7 @@ def main():
     p.add_argument("-p", required=True)
     args = p.parse_args()
 
-    messages = [{ "role": "user", "content": "Summarize the README for me."}]
+    messages = [{ "role": "user", "content": args.p}]
 
     response = call_llm(messages)
 
