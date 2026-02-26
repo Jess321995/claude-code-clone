@@ -35,8 +35,29 @@ def call_llm(msg):
                         "required": ["file_path"],
                     },
                 },
-            }
-        ]
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "Write",
+                    "description": "Write content to a file",
+                    "parameters": {
+                        "type": "object",
+                        "required": ["file_path", "content"],
+                        "properties": {
+                            "file_path": {
+                                "type": "string",
+                                "description": "The path of the file to write to"
+                                },
+                            "content": {
+                                "type": "string",
+                                "description": "The content to write to the file"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
     )
 
     if not chat.choices or len(chat.choices) == 0:
@@ -58,6 +79,16 @@ def execute_tool_call(tool_call: dict):
                 "tool_call_id": tool_call_id,
                 "content": file_contents.read(),
             }
+    elif name == "Write":
+        file_path = arguments["file_path"]
+        content = arguments["content"]
+        with open(file=file_path, mode="w", encoding="utf-8") as f:
+            f.write(content)
+        return {
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "content": f"Successfully wrote to {file_path}",
+        } 
 
 
 def main():
