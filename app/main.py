@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import json
+import subprocess
 
 from openai import OpenAI
 
@@ -56,7 +57,24 @@ def call_llm(msg):
                             }
                         }
                     }
+                },
+            {
+                "type": "function",
+                "function": {
+                    "name": "Bash",
+                    "description": "Execute a shell command",
+                    "parameters": {
+                        "type": "object",
+                        "required": ["command"],
+                        "properties": {
+                            "command": {
+                                "type": "string",
+                                "description": "The command to execute"
+                            }
+                        }
+                    }
                 }
+            }
             ]
     )
 
@@ -88,7 +106,35 @@ def execute_tool_call(tool_call: dict):
             "role": "tool",
             "tool_call_id": tool_call_id,
             "content": f"Successfully wrote to {file_path}",
-        } 
+        }
+    elif name == "Bash":
+        command = arguments["command"]
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            output = result.stdout + result.stderr
+            return {
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": output if output else "Command executed successfully (no output)",
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": "Error: Command timed out after 30 seconds",
+            }
+        except Exception as e:
+            return {
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": f"Error executing command: {str(e)}",
+            } 
 
 
 def main():
