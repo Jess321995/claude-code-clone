@@ -1,34 +1,143 @@
-[![progress-banner](https://backend.codecrafters.io/progress/claude-code/0e3ace44-7c4f-499d-a876-353828229854)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# Claude Code Clone
 
-This is a starting point for Python solutions to the
-["Build Your own Claude Code" Challenge](https://codecrafters.io/challenges/claude-code).
+A minimal implementation of Claude Code - an AI coding assistant that uses Large Language Models (LLMs) with tool calling capabilities to interact with files and execute commands.
 
-Claude Code is an AI coding assistant that uses Large Language Models (LLMs) to
-understand code and perform actions through tool calls. In this challenge,
-you'll build your own Claude Code from scratch by implementing an LLM-powered
-coding assistant.
+## Features
 
-Along the way you'll learn about HTTP RESTful APIs, OpenAI-compatible tool
-calling, agent loop, and how to integrate multiple tools into an AI assistant.
+This implementation supports three core tools:
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+- **Read**: Read and return the contents of files
+- **Write**: Write content to files (creates or overwrites)
+- **Bash**: Execute shell commands and capture output
 
-# Passing the first stage
+## Prerequisites
 
-The entry point for your `claude-code` implementation is in `app/main.py`. Study
-and uncomment the relevant code, and submit to pass the first stage:
+- Python 3.7+
+- `uv` package manager (or `pip`)
+- OpenRouter API key
 
+## Setup
+
+1. Install dependencies:
 ```sh
-codecrafters submit
+uv pip install openai
 ```
 
-# Stage 2 & beyond
+2. Set environment variables:
+```sh
+export OPENROUTER_API_KEY="your-api-key-here"
+export OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"  # Optional, defaults to this
+```
 
-Note: This section is for stages 2 and beyond.
+## Usage
 
-1. Ensure you have `uv` installed locally.
-2. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.py`.
-3. Run `codecrafters submit` to submit your solution to CodeCrafters. Test
-   output will be streamed to your terminal.
+Run the program with a prompt:
+
+```sh
+python app/main.py -p "Read the README.md file"
+```
+
+Or use the provided script:
+
+```sh
+./your_program.sh -p "Create a new file called hello.txt with the content 'Hello World'"
+```
+
+## Examples
+
+**Read a file:**
+```sh
+python app/main.py -p "What's in the main.py file?"
+```
+
+**Write to a file:**
+```sh
+python app/main.py -p "Create a file called test.txt with 'Hello, World!'"
+```
+
+**Execute commands:**
+```sh
+python app/main.py -p "List all Python files in the current directory"
+```
+
+**Combine operations:**
+```sh
+python app/main.py -p "Read app/main.py, create a backup called main_backup.py, then verify the backup exists"
+```
+
+## How It Works
+
+1. **User Input**: You provide a natural language prompt
+2. **LLM Processing**: The prompt is sent to Claude (via OpenRouter) with available tools
+3. **Tool Calling**: If needed, Claude requests tool calls (Read/Write/Bash)
+4. **Execution**: Your program executes the requested tools
+5. **Response Loop**: Results are sent back to Claude, which may request more tools
+6. **Final Output**: Claude provides a natural language response
+
+## Architecture
+
+```
+┌─────────────┐
+│ User Prompt │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────┐
+│  call_llm()         │
+│  - Send to Claude   │
+│  - Tools available  │
+└──────┬──────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│  Tool Calls Loop        │
+│  - While tool_calls:    │
+│    - execute_tool_call()│
+│    - Send results back  │
+└──────┬──────────────────┘
+       │
+       ▼
+┌─────────────────────┐
+│  Final Response     │
+│  - Natural language │
+└─────────────────────┘
+```
+
+## Tool Implementations
+
+### Read Tool
+```python
+with open(file=arguments["file_path"], mode="r", encoding="utf-8") as f:
+    return f.read()
+```
+
+### Write Tool
+```python
+with open(file=file_path, mode="w", encoding="utf-8") as f:
+    f.write(content)
+```
+
+### Bash Tool
+```python
+result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
+return result.stdout + result.stderr
+```
+
+## Model
+
+Currently using: `anthropic/claude-haiku-4.5` via OpenRouter
+
+## Safety Notes
+
+- The Bash tool executes commands with shell access - use with caution
+- Commands timeout after 30 seconds
+- File operations use UTF-8 encoding
+- Write operations will overwrite existing files without warning
+
+## Credits
+
+Based on the ["Build Your own Claude Code" Challenge](https://codecrafters.io/challenges/claude-code) from CodeCrafters.
+
+## License
+
+MIT
